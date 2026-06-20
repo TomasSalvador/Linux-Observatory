@@ -23,6 +23,9 @@ double calculate_mem_usage_percentage(const std::vector<std::string>& mem_info) 
     std::string label, unit;
     unsigned long total_mem, avail_mem;
 
+    /*
+     *  
+     */
     total_stream >> label >> total_mem >> unit;
     avail_stream >> label >> avail_mem >> unit;
 
