@@ -16,9 +16,9 @@ seu valor vao strings literais, e estas têm o mesmo tempo de vida da aplicaçao
 constexpr std::string_view mem_total = "MemTotal:";
 constexpr std::string_view mem_available = "MemAvailable:";
 
-double calculate_mem_usage_percentage(const std::vector<std::string>& mem_info) {
-    std::istringstream total_stream(mem_info[0]);
-    std::istringstream avail_stream(mem_info[1]);
+double calculate_mem_usage_percentage(const std::string& mem_total_line, const std::string& mem_avail_line) {
+    std::istringstream total_stream(mem_total_line);
+    std::istringstream avail_stream(mem_avail_line);
 
     std::string label, unit;
     unsigned long total_mem, avail_mem;
@@ -43,7 +43,7 @@ maior parte é menor do que um registo - ex. int sao 4B e um registo num sistema
 A rough rule of thumb (this comes from the C++ Core Guidelines): if a type is bigger than roughly two machine words and doesn't have trivial 
 copy semantics, default to const T& for read-only parameters; otherwise pass by value.
 */
-std::vector<std::string> memory_monitor(const std::string& file_name) {
+std::string memory_monitor(const std::string& file_name) {
 
     std::ifstream file(file_name);
 
@@ -52,21 +52,22 @@ std::vector<std::string> memory_monitor(const std::string& file_name) {
         return {};
     }
 
-    std::vector<std::string> mem_info(3);
+    std::string mem_total_line;
+    std::string mem_avail_line;
 
     std::string line;    
     while (std::getline(file, line)) {
         if (line.find(mem_total) != std::string::npos) {
-            mem_info[0] = line + '\n';
+            mem_total_line = line + '\n';
         }
         else if (line.find(mem_available) != std::string::npos) {
-            mem_info[1] = line + '\n';
+            mem_avail_line = line + '\n';
         }
     }
 
-    double mem_usage_percentage = calculate_mem_usage_percentage(mem_info);
+    double mem_usage_percentage = calculate_mem_usage_percentage(mem_total_line, mem_avail_line);
 
-    mem_info[2] = std::format("Memory Usage: {:.2f}%\n", mem_usage_percentage);
+    std::string res = std::format("Memory Usage: {:.2f}%\n", mem_usage_percentage);
 
-    return mem_info;
+    return res;
 }
