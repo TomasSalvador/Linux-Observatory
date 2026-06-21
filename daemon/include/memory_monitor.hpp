@@ -1,5 +1,5 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <optional>
 
-std::string memory_monitor(const std::string& file_name);
+std::optional<double> get_memory_usage_percentage(const std::string& file_name);

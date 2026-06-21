@@ -1,23 +1,21 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <string_view>
-#include <vector>
 #include <sstream>
-#include <format>
+#include <optional>
 #include <unistd.h>
 
 #include "cpu_monitor.hpp"
 
-constexpr int idle_idx = 3;
-constexpr int iowait_idx = 4;
+constexpr int IDLE_IDX = 3;
+constexpr int IOWAIT_IDX = 4;
 
-struct CPU_Info {
-    unsigned int total;
-    unsigned int idle_iowait;
+struct CpuInfo {
+    unsigned long total;
+    unsigned long idle_iowait;
 };
 
-CPU_Info get_cpu_info(std::string cpu_info) {
+CpuInfo get_cpu_info(const std::string& cpu_info) {
     std::istringstream cpu_info_stream(cpu_info);
 
     std::string label;
@@ -30,56 +28,63 @@ CPU_Info get_cpu_info(std::string cpu_info) {
     unsigned short idx = 0;
     while (cpu_info_stream >> value) {
         total += value;
-        if (idx == idle_idx || idx == iowait_idx)
+        if (idx == IDLE_IDX || idx == IOWAIT_IDX)
         {
             idle_iowait += value;
         }
         idx++;
     }
 
-    CPU_Info res = {total, idle_iowait};
+    CpuInfo res = {total, idle_iowait};
 
     return res;
 }
 
-CPU_Info extract_cpu_usage_info(const std::string& file_name) {
+std::optional<CpuInfo> extract_cpu_usage_info(const std::string& file_name) {
+    // fecha a stream automaticamente quando a var que o referencia está fora do scope de uso (quando a funçao retorna).
     std::ifstream file(file_name);
 
     if (!file.is_open()) {
         std::cerr << "Could not open the file in" << file_name << '\n';
-        return {};
+        return std::nullopt;
     }
 
     std::string line;    
     std::getline(file, line);
-    CPU_Info cpu_usage_percentage = get_cpu_info(line);
+    CpuInfo cpu_info = get_cpu_info(line);
 
-    file.close();
-
-    return cpu_usage_percentage;
+    return cpu_info;
 }
 
 
-std::string cpu_monitor(const std::string& file_name) {
+std::optional<double> get_cpu_usage_percentage(const std::string& file_name) {
 
-    CPU_Info cpu_info1 = extract_cpu_usage_info(file_name);
+    std::optional<CpuInfo> cpu_info1 = extract_cpu_usage_info(file_name);
+
+    if (!cpu_info1.has_value())
+    {
+        std::cerr << "First cpu info read failed\n";
+        return std::nullopt;
+    }
 
     sleep(3);
 
-    CPU_Info cpu_info2 = extract_cpu_usage_info(file_name);
+    std::optional<CpuInfo> cpu_info2 = extract_cpu_usage_info(file_name);
 
-    unsigned long total_delta = cpu_info2.total - cpu_info1.total;
-    unsigned long idle_iowait_delta = cpu_info2.idle_iowait - cpu_info1.idle_iowait;
-
-    std::string res;
-
-    if (total_delta != 0) {
-        double cpu_usage_percentage = (1 - static_cast<double>(idle_iowait_delta) / static_cast<double>(total_delta)) * 100.0;
-        res = std::format("CPU Usage: {:.2f}%\n", cpu_usage_percentage);
-    } else {
-        res = "Error reading CPU Usage\n";
+    if (!cpu_info2.has_value())
+    {
+        std::cerr << "Second cpu info read failed\n";
+        return std::nullopt;
     }
 
-    return res;
-    
+    unsigned long total_delta = cpu_info2->total - cpu_info1->total;
+    unsigned long idle_iowait_delta = cpu_info2->idle_iowait - cpu_info1->idle_iowait;
+
+    if (total_delta == 0)
+    {
+        std::cerr << "CPU total delta is zero, cannot calculate usage\n";
+        return std::nullopt;
+    }    
+
+    return (1 - static_cast<double>(idle_iowait_delta) / static_cast<double>(total_delta)) * 100.0;    
 }
