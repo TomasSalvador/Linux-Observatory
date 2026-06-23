@@ -4,35 +4,34 @@
 #include <format>
 #include <optional>
 
-#include "memory_monitor.hpp"
-#include "cpu_monitor.hpp"
+#include "model/SystemStats.hpp"
+#include "collectors/CpuCollector.hpp"
+#include "collectors/MemoryCollector.hpp"
 
 int main()
 {
-    std::cout << "Starting System Monitoring App...\n";
-    std::cout << "\n";
+    std::cout << "Starting System Monitoring App...\n\n";
 
-    std::string mem_file_name("/proc/meminfo");
-    std::string cpu_file_name("/proc/stat");
+    MemoryCollector mem_collector = MemoryCollector("/proc/meminfo");
+    CpuCollector cpu_collector = CpuCollector("/proc/stat");
 
     while(true) {
-        std::optional<double> mem_usage_perc = get_memory_usage_percentage(mem_file_name);
+        std::optional<double> mem_usage_perc = mem_collector.get_usage_percentage();
         if (!mem_usage_perc.has_value())
         {
             std::cerr << "Error getting memory usage stats\n";
             return 1;
         }
         
-        std::optional<double> cpu_usage_perc = get_cpu_usage_percentage(cpu_file_name);
+        std::optional<double> cpu_usage_perc = cpu_collector.get_usage_percentage();
         if (!cpu_usage_perc.has_value())
         {
             std::cerr << "Error getting cpu usage stats\n";
             return 1;
         }
 
-        std::cout << std::format("Memory Usage: {:.2f}%\n", mem_usage_perc.value());
-        std::cout << std::format("CPU Usage: {:.2f}%\n", cpu_usage_perc.value());
-        
+        std::cout << std::format("Memory Usage: {:.2f}%\n", *mem_usage_perc);
+        std::cout << std::format("CPU Usage: {:.2f}%\n", *cpu_usage_perc);
         std::cout << "\n";
 
         sleep(2);
