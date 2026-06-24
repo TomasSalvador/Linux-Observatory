@@ -4,8 +4,10 @@
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 
 #include "collectors/MemoryCollector.hpp"
+#include "model/Metric.hpp"
 
 namespace {
     /* 
@@ -49,7 +51,7 @@ maior parte é menor do que um registo - ex. int sao 4B e um registo num sistema
 A rough rule of thumb (this comes from the C++ Core Guidelines): if a type is bigger than roughly two machine words and doesn't have trivial 
 copy semantics, default to const T& for read-only parameters; otherwise pass by value.
 */
-std::optional<double> MemoryCollector::get_usage_percentage() {
+std::optional<std::vector<Metric>> MemoryCollector::collect() {
     std::ifstream file(file_path_);
 
     if (!file.is_open()) {
@@ -74,9 +76,11 @@ std::optional<double> MemoryCollector::get_usage_percentage() {
     {
         std::cerr << "Could not find the required memory fields in " << file_path_ << "\n";
         return std::nullopt;
-    }    
+    }
 
-    return calculate_mem_usage_percentage(mem_total_line, mem_avail_line);
+    double usage = calculate_mem_usage_percentage(mem_total_line, mem_avail_line);
+
+    return std::vector<Metric>{{get_label(), "Usage", usage, "%"}};
 };
 
 std::string MemoryCollector::get_label() const {

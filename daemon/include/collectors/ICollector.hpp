@@ -1,6 +1,10 @@
 #pragma once
 #include <optional>
 #include <string>
+#include <vector>
+#include <optional>
+
+#include "model/Metric.hpp"
 
 /**
  * Os metodos retornam 0 para indicar que nao têm implementaçao, e que quem implementa esta classe(interface/classe abstrata) tem de ter uma 
@@ -13,7 +17,7 @@
  */
 class ICollector {
 public:
-    virtual std::optional<double> get_usage_percentage() = 0;
+    virtual std::optional<std::vector<Metric>> collect() = 0;
     virtual std::string get_label() const = 0;
     virtual ~ICollector() = default;
 };

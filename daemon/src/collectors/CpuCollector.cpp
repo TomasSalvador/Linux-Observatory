@@ -4,8 +4,10 @@
 #include <sstream>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 
 #include "collectors/CpuCollector.hpp"
+#include "model/Metric.hpp"
 
 /**
  * namespace sem nome, é tipo o 'static' no C ou, nao me lembro do nome, mas no Java, classes/metodos definidos dentro de outros classes/metodos.
@@ -69,7 +71,7 @@ namespace {
 CpuCollector::CpuCollector(const std::string& file_path) : file_path_(file_path) {};
 
 
-std::optional<double> CpuCollector::get_usage_percentage() {
+std::optional<std::vector<Metric>> CpuCollector::collect() {
     std::optional<CpuInfo> cpu_info1 = extract_cpu_usage_info(file_path_);
 
     if (!cpu_info1.has_value())
@@ -97,7 +99,9 @@ std::optional<double> CpuCollector::get_usage_percentage() {
         return std::nullopt;
     }    
 
-    return (1 - static_cast<double>(idle_iowait_delta) / static_cast<double>(total_delta)) * 100.0;    
+    double usage = (1 - static_cast<double>(idle_iowait_delta) / static_cast<double>(total_delta)) * 100.0;
+
+    return std::vector<Metric>{{get_label(), "Usage", usage, "%"}}; 
 };
 
 std::string CpuCollector::get_label() const {
