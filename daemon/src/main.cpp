@@ -9,16 +9,27 @@
 #include "model/Metric.hpp"
 #include "collectors/CpuCollector.hpp"
 #include "collectors/MemoryCollector.hpp"
+#include "collectors/NetworkCollector.hpp"
 #include "SystemMonitor.hpp"
 
-int main()
+int main(int argc, char* argv[])
 {
+    if (argc < 2)
+    {
+        std::cerr << "Usage: sysobserverd <network_interface>\n";
+        std::cerr << "Example: sysobserverd wlp2s0\n";
+        return 1;
+    }
+    // nao é const std::string& porque o argv[1] é um char*, entao teria de criar uma std::string para criar a referencia, entao vai dar ao mesmo.
+    std::string interface = argv[1];
+    
     std::cout << "Starting System Monitoring App...\n\n";
 
     SystemMonitor system_monitor;
 
     system_monitor.add_collector(std::make_unique<MemoryCollector>(MemoryCollector("/proc/meminfo")));
     system_monitor.add_collector(std::make_unique<CpuCollector>(CpuCollector("/proc/stat")));
+    system_monitor.add_collector(std::make_unique<NetworkCollector>(NetworkCollector("/proc/net/dev", interface)));
 
     while(true) {
 
