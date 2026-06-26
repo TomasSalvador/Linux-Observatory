@@ -40,7 +40,7 @@ namespace {
 }
 
 
-MemoryCollector::MemoryCollector(const std::string& file_path) : file_path_(file_path) {};
+MemoryCollector::MemoryCollector(const std::string& file_path) : file_path_(file_path) {}
 
 /* 
 const std::string& é a referencia constante para o objeto string, apenas permite leitura, se passar std::string, cria uma copia.
@@ -81,9 +81,9 @@ std::optional<std::vector<Metric>> MemoryCollector::collect() {
     double usage = calculate_mem_usage_percentage(mem_total_line, mem_avail_line);
 
     return std::vector<Metric>{{get_label(), "Usage", usage, "%"}};
-};
+}
 
 std::string MemoryCollector::get_label() const {
     return "Memory";
-};
+}
 

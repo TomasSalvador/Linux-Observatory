@@ -14,7 +14,7 @@
  */
 void SystemMonitor::add_collector(std::unique_ptr<ICollector> collector) {
     collectors_.push_back(std::move(collector));
-};
+}
 
 /**
  * auto é um tipo que deteta automaticamente o tipo da var, para nao ter de escriver sempre o tipo, por ser muito longo, ou só para nao estar sempre
@@ -39,4 +39,4 @@ std::optional<std::vector<Metric>> SystemMonitor::collect_all() {
     }
 
     return all_metrics;
-};
+}
