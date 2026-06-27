@@ -6,11 +6,14 @@
 #include "collectors/ICollector.hpp"
 #include "model/Metric.hpp"
 #include "SystemMonitor.hpp"
+#include "Logger.hpp"
+
+SystemMonitor::SystemMonitor(Logger& logger) : logger_(logger) {}
 
 /**
  * unique_ptr nao permite copias do objeto, ele tem apenas um dono, que neste caso é a instancia da classe SystemMonitor. A unica forma de passar o 
  * objeto para outro lado, é com o operador 'std::move' que passar o objeto para outro dono, e o ptr do dono anterior fica vazio, neste caso o novo 
- * dono passa a ser o vector collectors_. É bom porque assim sabe se exatamente quem lida com a alocaçao e libertaçao(?) de memoria deste objeto.
+ * dono passa a ser o vector collectors_. É bom porque assim sabe se exatamente quem lida com a alocaçao e libertaçao de memoria deste objeto.
  */
 void SystemMonitor::add_collector(std::unique_ptr<ICollector> collector) {
     collectors_.push_back(std::move(collector));
@@ -29,10 +32,13 @@ std::optional<std::vector<Metric>> SystemMonitor::collect_all() {
         std::optional<std::vector<Metric>> metrics = collector->collect();
         if (!metrics.has_value())
         {
-            std::cerr << "Error colleting metrics for " << collector->get_label() << "\n";
+            std::string error_message = "Error collecting metrics for " + collector->get_label();
+            std::cerr << error_message << "\n";
+            logger_.log_error(error_message);
             return std::nullopt;
         }
-        for (auto& metric : *metrics)
+
+        for (const auto& metric : *metrics)
         {
             all_metrics.push_back(metric);
         }
