@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     // nao é const std::string& porque o argv[1] é um char*, entao teria de criar uma std::string para criar a referencia, entao vai dar ao mesmo.
     std::string interface = argv[1];
     
-    std::cout << "Starting System Observer App...\n";
+    std::cout << "Starting System Observer App...\n\n";
 
     SystemMonitor system_monitor(logger);
 

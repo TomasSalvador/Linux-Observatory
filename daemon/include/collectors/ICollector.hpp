@@ -2,7 +2,7 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <optional>
+#include <expected>
 
 #include "model/Metric.hpp"
 
@@ -17,7 +17,7 @@
  */
 class ICollector {
 public:
-    virtual std::optional<std::vector<Metric>> collect() = 0;
+    virtual std::expected<std::vector<Metric>, std::string> collect() = 0;
     virtual std::string get_label() const = 0;
     virtual ~ICollector() = default;
 };

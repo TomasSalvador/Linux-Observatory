@@ -2,6 +2,7 @@
 #include <optional>
 #include <memory>
 #include <iostream>
+#include <expected>
 
 #include "collectors/ICollector.hpp"
 #include "model/Metric.hpp"
@@ -29,11 +30,10 @@ std::optional<std::vector<Metric>> SystemMonitor::collect_all() {
     std::vector<Metric> all_metrics;
 
     for (auto& collector : collectors_) {
-        std::optional<std::vector<Metric>> metrics = collector->collect();
+        std::expected<std::vector<Metric>, std::string> metrics = collector->collect();
         if (!metrics.has_value())
         {
-            std::string error_message = "Error collecting metrics for " + collector->get_label();
-            std::cerr << error_message << "\n";
+            std::string error_message = "Error collecting metrics for " + collector->get_label() + '\n' + metrics.error();
             logger_.log_error(error_message);
             return std::nullopt;
         }

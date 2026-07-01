@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <format>
+#include <expected>
 
 #include "model/Metric.hpp"
 #include "collectors/NetworkCollector.hpp"
@@ -20,12 +21,11 @@ namespace {
         unsigned long upload;
     };
 
-    std::optional<std::string> get_network_interface_line(const std::string& file_path, const std::string& interface) {
+    std::expected<std::string, std::string> get_network_interface_line(const std::string& file_path, const std::string& interface) {
         std::ifstream file(file_path);
         if (!file.is_open())
         {
-            std::cerr << "Could not open the file in" << file_path << '\n';
-            return std::nullopt;
+            return std::unexpected("Could not open the file in" + file_path + '\n');
         }
         std::string interface_label = interface + ':';
         std::string line;  
@@ -35,16 +35,15 @@ namespace {
             }
         }
 
-        std::cerr << std::format("{} network interface not found in {}\n", interface, file_path);
-        return std::nullopt;
+        return std::unexpected(std::format("{} network interface not found in {}\n", interface, file_path));
     }
 
-    std::optional<NetworkInfo> extract_network_info(const std::string& file_path, const std::string& interface) {
-        std::optional<std::string> network_interface_line = get_network_interface_line(file_path, interface);
+    std::expected<NetworkInfo, std::string> extract_network_info(const std::string& file_path, const std::string& interface) {
+        std::expected<std::string, std::string> network_interface_line = get_network_interface_line(file_path, interface);
 
         if (!network_interface_line.has_value())
         {
-            return std::nullopt;
+            return std::unexpected(network_interface_line.error());
         }
 
         std::istringstream network_info_stream(*network_interface_line);
@@ -75,21 +74,19 @@ namespace {
 NetworkCollector::NetworkCollector(const std::string& file_path, const std::string& interface) 
     : file_path_(file_path), interface_(interface) {}
 
-std::optional<std::vector<Metric>> NetworkCollector::collect() {
-    std::optional<NetworkInfo> network_info1 = extract_network_info(file_path_, interface_);
+std::expected<std::vector<Metric>, std::string> NetworkCollector::collect() {
+    std::expected<NetworkInfo, std::string> network_info1 = extract_network_info(file_path_, interface_);
     if (!network_info1.has_value())
     {
-        std::cerr << "First network info read failed\n";
-        return std::nullopt;
+        return std::unexpected("First network info read failed | " + network_info1.error());
     }
 
     sleep(INTERVAL_SECONDS);
 
-    std::optional<NetworkInfo> network_info2 = extract_network_info(file_path_, interface_);
+    std::expected<NetworkInfo, std::string> network_info2 = extract_network_info(file_path_, interface_);
     if (!network_info2.has_value())
     {
-        std::cerr << "Second network info read failed\n";
-        return std::nullopt;
+        return std::unexpected("Second network info read failed | " + network_info2.error());
     }
     
     double download_delta_kb = static_cast<double>(network_info2->download - network_info1->download) / 1024;
